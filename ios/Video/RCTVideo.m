@@ -750,9 +750,15 @@ static int const RCTVideoUnset = -1;
           if (CGRectEqualToRect(newRect, [UIScreen mainScreen].bounds)) {
             NSLog(@"in fullscreen");
               _isInFullScreen = YES;
+              if(self.onVideoFullscreenPlayerDidPresent) {
+                  self.onVideoFullscreenPlayerDidPresent(@{@"target": self.reactTag});
+                }
           } else {
                       NSLog(@"not fullscreen");
                       _isInFullScreen = NO;
+              if(self.onVideoFullscreenPlayerDidDismiss) {
+                self.onVideoFullscreenPlayerDidDismiss(@{@"target": self.reactTag});
+              }
         }
             [self.reactViewController.view setFrame:[UIScreen mainScreen].bounds];
             [self.reactViewController.view setNeedsLayout];
@@ -1373,7 +1379,7 @@ static int const RCTVideoUnset = -1;
       if(self.onVideoFullscreenPlayerWillPresent) {
         self.onVideoFullscreenPlayerWillPresent(@{@"target": self.reactTag});
       }
-        [viewController presentViewController:_playerViewController animated:false completion:^{
+        [viewController presentViewController:_playerViewController animated:true completion:^{
         _playerViewController.showsPlaybackControls = YES;
         _fullscreenPlayerPresented = fullscreen;
         _playerViewController.autorotate = _fullscreenAutorotate;
@@ -1387,14 +1393,14 @@ static int const RCTVideoUnset = -1;
   else if ( !fullscreen && _fullscreenPlayerPresented )
   {
     [self videoPlayerViewControllerWillDismiss:_playerViewController];
-      [_presentingViewController dismissViewControllerAnimated:false completion:^{
+      [_presentingViewController dismissViewControllerAnimated:true completion:^{
             [self videoPlayerViewControllerDidDismiss:_playerViewController];
           }];
-        }
+  }
         else if ( !fullscreen && _isInFullScreen)
         {
           [self videoPlayerViewControllerWillDismiss:_playerViewController];
-          [_playerViewController.parentViewController dismissViewControllerAnimated:false completion:^{
+          [_playerViewController.parentViewController dismissViewControllerAnimated:true completion:^{
             [self videoPlayerViewControllerDidDismiss:_playerViewController];
           }];
   }
@@ -1642,9 +1648,11 @@ static int const RCTVideoUnset = -1;
   _player = nil;
   
   [self removePlayerLayer];
-  
-  [_playerViewController.contentOverlayView removeObserver:self forKeyPath:@"frame"];
-  [_playerViewController removeObserver:self forKeyPath:readyForDisplayKeyPath];
+    @try{
+        [_playerViewController.contentOverlayView removeObserver:self forKeyPath:@"frame"];
+        [_playerViewController removeObserver:self forKeyPath:readyForDisplayKeyPath];
+    }@catch(id anException){
+    }
   [_playerViewController.view removeFromSuperview];
   _playerViewController.rctDelegate = nil;
   _playerViewController.player = nil;
